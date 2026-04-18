@@ -1,8 +1,14 @@
 """
-Database configuration module for Medical Bot Agent OS.
+Database configuration module for Orbixa AI Agent OS.
 Sets up MongoDB and Qdrant connections using Agno's built-in classes.
 """
 import os
+import certifi
+
+# Ensure certifi CA bundle is used for all SSL connections (fixes Python 3.13 + Atlas TLS issue)
+os.environ.setdefault("SSL_CERT_FILE", certifi.where())
+os.environ.setdefault("REQUESTS_CA_BUNDLE", certifi.where())
+
 from agno.db.mongo import MongoDb
 from agno.vectordb.qdrant import Qdrant
 from agno.vectordb.search import SearchType
@@ -11,9 +17,9 @@ from agno.knowledge.embedder.fastembed import FastEmbedEmbedder
 def get_mongodb() -> MongoDb:
     """Create and return a MongoDB instance for agent storage."""
     return MongoDb(
-        id="medical_bot_db",
+        id="orbixa_ai_db",
         db_url=os.getenv("MONGODB_URL", "mongodb://localhost:27017"),
-        db_name=os.getenv("MONGODB_DATABASE", "medical_bot"),
+        db_name=os.getenv("MONGODB_DATABASE", "orbixa_ai"),
         # session_table=os.getenv("MONGODB_SESSION_TABLE", "agent_sessions"),
     )
 

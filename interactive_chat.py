@@ -1,7 +1,7 @@
 """
-Medical Bot Agent OS - Interactive Chat CLI
+Orbixa AI Agent OS - Interactive Chat CLI
 
-Interactive command-line interface for chatting with the Medical Bot Agent OS
+Interactive command-line interface for chatting with the Orbixa AI Agent OS
 with real-time token usage tracking and word counts.
 
 Usage:
@@ -31,12 +31,12 @@ os.environ["SSL_CERT_FILE"] = certifi.where()
 TIMEOUT = int(os.getenv("AGENTOS_TIMEOUT", "600"))
 
 class InteractiveMedicalBotChat:
-    """Interactive chat interface for Medical Bot Agent OS."""
+    """Interactive chat interface for Orbixa AI Agent OS."""
     
     def __init__(self, base_url: str = "http://localhost:8000"):
         """Initialize the chat interface."""
         self.client = AgentOSClient(base_url=base_url)
-        self.agent_id = "medical-agent"
+        self.agent_id = "orbixa-agent"
         self.session_id: Optional[str] = None
         self.user_id = os.getenv("USER_ID", "interactive_user")
         self.jwt_secret = os.getenv("JWT_SECRET", "your-secret-key")
@@ -73,7 +73,7 @@ class InteractiveMedicalBotChat:
     def print_header(self):
         """Print the chat header."""
         print("\n" + "=" * 80)
-        print("  🏥 Medical Bot Agent OS - Interactive Chat")
+        print("  🤖 Orbixa AI Agent OS - Interactive Chat")
         print("=" * 80)
         print(f"  Base URL: {self.client.base_url}")
         print(f"  User ID: {self.user_id}")
@@ -422,7 +422,7 @@ class InteractiveMedicalBotChat:
                     elif command == '/metrics':
                         self.print_session_metrics()
                     elif command == '/exit' or command == '/quit':
-                        print("\n👋 Goodbye! Thanks for using Medical Bot Agent OS.\n")
+                        print("\n👋 Goodbye! Thanks for using Orbixa AI Agent OS.\n")
                         break
                     else:
                         print(f"\n❌ Unknown command: {command}")
@@ -434,10 +434,10 @@ class InteractiveMedicalBotChat:
                 await self.send_message(user_input)
                 
             except KeyboardInterrupt:
-                print("\n\n👋 Goodbye! Thanks for using Medical Bot Agent OS.\n")
+                print("\n\n👋 Goodbye! Thanks for using Orbixa AI Agent OS.\n")
                 break
             except EOFError:
-                print("\n\n👋 Goodbye! Thanks for using Medical Bot Agent OS.\n")
+                print("\n\n👋 Goodbye! Thanks for using Orbixa AI Agent OS.\n")
                 break
             except Exception as e:
                 print(f"\n❌ Unexpected error: {e}\n")

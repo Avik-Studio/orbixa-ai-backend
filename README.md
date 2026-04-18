@@ -1,17 +1,17 @@
-# Medical Bot Agent OS
+# Orbixa AI - Backend
 
-A production-ready Agent OS backend for Medical AI Assistant, built with Agno framework, FastAPI, MongoDB, and Qdrant.
+A production-ready Agent OS backend for **Orbixa AI**, a powerful generative AI assistant built by **Avik Modak**. Powered by Agno framework, FastAPI, MongoDB, Qdrant, and Google Gemini.
 
 ## Features
 
-- 🤖 **Medical AI Agent**: Expert medical assistant with comprehensive knowledge base
+- 🤖 **Orbixa AI Agent**: Versatile generative AI assistant — coding, writing, research, math, science, creative tasks
 - 🗄️ **MongoDB**: Persistent session storage and state management
-- 🔍 **Qdrant**: Vector database for medical document search with hybrid search
+- 🔍 **Qdrant**: Vector database for document search with hybrid search
 - 🔐 **JWT Authentication**: Secure API with user/session extraction
-- 📚 **Knowledge Base**: Medical textbooks with intelligent filtering
+- 📚 **Knowledge Base**: Upload and search custom documents with intelligent filtering
 - 🎯 **Agentic State**: Autonomous session state management
 - ⚡ **FastAPI**: High-performance REST API with SSE streaming
-- 📊 **Custom Prompts**: Medical-specific system prompts and few-shot examples
+- 📊 **Custom Prompts**: Generative AI system prompts and few-shot examples
 
 ## Architecture
 
@@ -21,9 +21,9 @@ A production-ready Agent OS backend for Medical AI Assistant, built with Agno fr
 ├─────────────────────────────────────────────────────────┤
 │  JWT Middleware (Extract user_id, session_id)           │
 ├─────────────────────────────────────────────────────────┤
-│  Medical Agent                                           │
+│  Orbixa AI Agent                                         │
 │  ├─ MongoDB (Session State, Memory)                     │
-│  ├─ Qdrant (Knowledge Base with PDF documents)          │
+│  ├─ Qdrant (Knowledge Base with uploaded documents)     │
 │  ├─ Custom Filter Validator (Lambda function)           │
 │  └─ System Prompts + Few-Shot Examples                  │
 └─────────────────────────────────────────────────────────┘
@@ -70,19 +70,19 @@ A production-ready Agent OS backend for Medical AI Assistant, built with Agno fr
    ```env
    # MongoDB
    MONGODB_URL=mongodb://localhost:27017
-   MONGODB_DATABASE=medical_bot
-   
+   MONGODB_DATABASE=orbixa_ai
+
    # Qdrant
    QDRANT_URL=http://localhost:6333
-   QDRANT_COLLECTION_NAME=medical_documents
-   
+   QDRANT_COLLECTION_NAME=orbixa_knowledge_base
+
    # JWT
-   JWT_VERIFICATION_KEY=your_secret_key
+   JWT_SECRET=your_secret_key
    JWT_ALGORITHM=HS256
-   
-   # OpenAI
-   MODEL_API_KEY=sk-your-openai-api-key
-   MODEL_MODEL_ID=gpt-4o
+
+   # Gemini
+   GOOGLE_API_KEY=your-google-api-key
+   GEMINI_MODEL_ID=gemini-2.0-flash
    ```
 
 5. **Run the application:**
@@ -103,24 +103,20 @@ A production-ready Agent OS backend for Medical AI Assistant, built with Agno fr
 ## Project Structure
 
 ```
-MEDBotv3/
+orbixa-ai-backend/
 ├── app.py                          # Main AgentOS application
 ├── requirements.txt                # Python dependencies
 ├── .env.example                    # Environment template
-├── IMPLEMENTATION_PLAN.md          # Detailed implementation plan
-├── Prompts.md                      # System prompts and examples
 │
 ├── config/                         # Configuration modules
 │   ├── __init__.py
-│   ├── env.py                      # Environment settings
 │   ├── database.py                 # Database connections
 │   ├── prompts.py                  # Prompt loader
-│   ├── few_shot_examples.py        # Few-shot examples
-│   └── jsonhandeller.py            # JSON utilities
+│   └── promptsBig.py               # Extended prompts
 │
 ├── agents/                         # Agent definitions
 │   ├── __init__.py
-│   └── medical_agent.py            # Medical AI agent
+│   └── medical_agent.py            # Orbixa AI agent
 │
 ├── knowledge/                      # Knowledge base
 │   ├── __init__.py
@@ -142,13 +138,13 @@ MEDBotv3/
 
 ### Agent Endpoints
 
-- `POST /agents/medical-agent/run` - Run agent with message
-- `GET /agents/medical-agent/sessions` - List sessions
-- `GET /agents/medical-agent/sessions/{session_id}` - Get session
-- `DELETE /agents/medical-agent/sessions/{session_id}` - Delete session
+- `POST /agents/orbixa-agent/run` - Run agent with message
+- `GET /agents/orbixa-agent/sessions` - List sessions
+- `GET /agents/orbixa-agent/sessions/{session_id}` - Get session
+- `DELETE /agents/orbixa-agent/sessions/{session_id}` - Delete session
 
 ### Knowledge Endpoints
-- `POST /knowledge/search` - Search medical knowledge base
+- `POST /knowledge/search` - Search knowledge base
 - `GET /knowledge/contents` - List knowledge contents
 
 ## Authentication
@@ -165,8 +161,8 @@ Authorization: Bearer <your-jwt-token>
 {
   "sub": "user-123",
   "session_id": "session-abc-xyz",
-  "email": "doctor@example.com",
-  "name": "Dr. John Smith",
+  "email": "user@example.com",
+  "name": "Avik Modak",
   "exp": 1735689600,
   "iat": 1735603200
 }
@@ -182,27 +178,27 @@ The knowledge base supports metadata filtering with validation:
 
 ### Valid Filters
 
-- `book_name`: Medical textbook name (e.g., "Harrison.pdf")
-- `part`: Section within a book (e.g., "Part_1")
+- `source_name`: Uploaded document name (e.g., "guide.pdf")
+- `part`: Section within a document (e.g., "Part_1")
 - `page`: Specific page number
 
 ### Filter Rules
 
-1. **One Book Per Search**: Only ONE `book_name` per search
-2. **Sequential Multi-Book**: Search multiple books sequentially
+1. **One Source Per Search**: Only ONE `source_name` per search
+2. **Sequential Multi-Source**: Search multiple sources sequentially
 3. **Valid Keys Only**: Only use the allowed filter keys
 
 ### Example Usage
 
 ```python
-# Single book search
-filters = {"book_name": "Harrison.pdf"}
+# Single source search
+filters = {"source_name": "guide.pdf"}
 
-# Book with section
-filters = {"book_name": "Harrison.pdf", "part": "Part_1"}
+# Source with section
+filters = {"source_name": "guide.pdf", "part": "Part_1"}
 
-# Book with page (last resort)
-filters = {"book_name": "Harrison.pdf", "page": 125}
+# Source with page
+filters = {"source_name": "guide.pdf", "page": 125}
 ```
 
 ## Session State
@@ -212,8 +208,8 @@ The agent maintains session state automatically:
 ```python
 {
   "topics_to_write": [],
-  "books_to_search": [],
-  "preferred_books": [],
+  "sources_to_search": [],
+  "preferred_sources": [],
   "writing_progress": {}
 }
 ```
@@ -230,15 +226,10 @@ All agent responses follow a JSON schema:
 
 ```json
 {
-  "query_response": "Brief summary of the action",
-  "title": null,
-  "doctorName": null,
-  "doctorInfo": null,
-  "address": null,
-  "patientInfo": null,
-  "prescriptionText": [
+  "chat_response": "Brief conversational summary of what was done",
+  "canvas_text": [
     {
-      "text": "Content with markdown",
+      "text": "Detailed content with Markdown and LaTeX",
       "table": {
         "column_headers": ["Col1", "Col2"],
         "columns_count": 2,
@@ -247,8 +238,7 @@ All agent responses follow a JSON schema:
       },
       "keypoints": ["Key point 1", "Key point 2"]
     }
-  ],
-  "correctionsDone": null
+  ]
 }
 ```
 

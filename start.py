@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Startup script for Medical Bot Agent OS.
+Startup script for Orbixa AI Agent OS.
 Checks dependencies, validates configuration, and starts the server.
 """
 import sys
@@ -157,7 +157,7 @@ def start_server():
 def main():
     """Main startup function."""
     print("\n" + "="*60)
-    print("  Medical Bot Agent OS - Startup")
+    print("  Orbixa AI Agent OS - Startup")
     print("="*60 + "\n")
     
     try:

@@ -1,1 +1,1 @@
-"""Agents package for Medical Bot Agent OS."""
+"""Agents package for Orbixa AI Agent OS."""

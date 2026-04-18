@@ -1,6 +1,6 @@
 """
 AgentOS Client Test Script
-Tests the Medical Bot Agent OS capabilities including:
+Tests the Orbixa AI Agent OS capabilities including:
 - JWT Authentication
 - Chat functionality
 - Session history
@@ -18,7 +18,7 @@ load_dotenv()
 
 
 class AgentOSClient:
-    """Client for interacting with the Medical Bot Agent OS."""
+    """Client for interacting with the Orbixa AI Agent OS."""
     
     def __init__(
         self,
@@ -59,7 +59,7 @@ class AgentOSClient:
         stream: bool = False
     ) -> Dict[str, Any]:
         """
-        Send a message to the medical agent.
+        Send a message to the Orbixa AI agent.
         
         Args:
             message: The user's message
@@ -69,7 +69,7 @@ class AgentOSClient:
         Returns:
             Response from the agent
         """
-        url = f"{self.base_url}/agents/medical-agent/runs"
+        url = f"{self.base_url}/agents/orbixa-agent/runs"
         
         payload = {
             "message": message,
@@ -95,7 +95,7 @@ class AgentOSClient:
     
     def get_sessions(self) -> Dict[str, Any]:
         """Get all sessions for the current user."""
-        url = f"{self.base_url}/agents/medical-agent/sessions"
+        url = f"{self.base_url}/agents/orbixa-agent/sessions"
         response = requests.get(url, headers=self.get_headers())
         
         if response.status_code == 200:
@@ -120,7 +120,7 @@ class AgentOSClient:
         if not sid:
             return {"error": "No session ID provided"}
         
-        url = f"{self.base_url}/agents/medical-agent/sessions/{sid}"
+        url = f"{self.base_url}/agents/orbixa-agent/sessions/{sid}"
         response = requests.get(url, headers=self.get_headers())
         
         if response.status_code == 200:
@@ -137,7 +137,7 @@ class AgentOSClient:
         if not sid:
             return {"error": "No session ID provided"}
         
-        url = f"{self.base_url}/agents/medical-agent/sessions/{sid}"
+        url = f"{self.base_url}/agents/orbixa-agent/sessions/{sid}"
         response = requests.delete(url, headers=self.get_headers())
         
         if response.status_code == 200:
@@ -193,7 +193,7 @@ def test_client():
     """Run comprehensive tests of the AgentOS client."""
     
     print_section("AgentOS Client Test Suite")
-    print(f"Testing Medical Bot Agent OS at http://localhost:8000")
+    print(f"Testing Orbixa AI Agent OS at http://localhost:8000")
     print(f"User ID: test_user_123")
     
     # Initialize client

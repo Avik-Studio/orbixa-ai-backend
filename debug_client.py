@@ -1,5 +1,5 @@
 """
-Debug Client for Medical Bot Agent OS
+Debug Client for Orbixa AI Agent OS
 Uses Agno's AgentOSClient to test the agent directly.
 Tests: Chat, History, Response Schema, Knowledge Base
 """
@@ -43,9 +43,9 @@ def to_dict(obj):
     return obj
 
 async def test_agentos():
-    """Test the Medical Bot AgentOS using AgentOSClient."""
+    """Test the Orbixa AI AgentOS using AgentOSClient."""
     
-    print_section("Medical Bot AgentOS Debug Client")
+    print_section("Orbixa AI AgentOS Debug Client")
     print("Testing local AgentOS instance at http://localhost:8000")
     
     # Initialize AgentOSClient
@@ -86,14 +86,14 @@ async def test_agentos():
     # Test 3: First Message - Create New Session
     print_section("Test 3: First Message - Create New Session")
     user_id = "test_user_123"
-    message1 = "Hello! Can you help me understand diabetes management?"
+    message1 = "Hello! Can you help me understand machine learning concepts?"
     
     print(f"👤 User: {message1}")
     print("⏳ Sending message...")
     
     try:
         response1 = await client.arun_agent(
-            agent_id="medical-agent",
+            agent_id="orbixa-agent",
             message=message1,
             user_id=user_id,
         )
@@ -126,7 +126,7 @@ async def test_agentos():
     
     # Test 4: Follow-up Message - Same Session
     print_section("Test 4: Follow-up Message - Session Continuity")
-    message2 = "What are the key symptoms I should monitor?"
+    message2 = "Can you explain the core algorithms in more detail?"
     
     print(f"👤 User: {message2}")
     print(f"🔗 Using session: {session_id}")
@@ -134,7 +134,7 @@ async def test_agentos():
     
     try:
         response2 = await client.arun_agent(
-            agent_id="medical-agent",
+            agent_id="orbixa-agent",
             message=message2,
             user_id=user_id,
             session_id=session_id,
@@ -161,7 +161,7 @@ async def test_agentos():
     
     try:
         session_data = await client.aget_session(
-            agent_id="medical-agent",
+            agent_id="orbixa-agent",
             session_id=session_id
         )
         sess = to_dict(session_data) or {}
@@ -196,7 +196,7 @@ async def test_agentos():
     
     try:
         sessions = await client.aget_sessions(
-            agent_id="medical-agent",
+            agent_id="orbixa-agent",
             user_id=user_id
         )
         sessions_list = to_dict(sessions) or []
@@ -209,16 +209,16 @@ async def test_agentos():
     except Exception as e:
         print(f"❌ Error: {e}")
     
-    # Test 7: Medical Knowledge Query
-    print_section("Test 7: Medical Knowledge Query")
-    message3 = "Search for information about hypertension treatment guidelines"
+    # Test 7: Knowledge Base Query
+    print_section("Test 7: Knowledge Base Query")
+    message3 = "Search for information about Python async programming patterns"
     
     print(f"👤 User: {message3}")
     print("⏳ Sending message...")
     
     try:
         response3 = await client.arun_agent(
-            agent_id="medical-agent",
+            agent_id="orbixa-agent",
             message=message3,
             user_id=user_id,
             session_id=session_id,
@@ -255,11 +255,11 @@ async def test_agentos():
         print(f"  ✓ {field}")
     
     print("\n📝 Note: The agent's response should follow the OutputSchema structure")
-    print("         defined in agents/medical_agent.py")
+    print("         defined in agents/medical_agent.py (orbixa agent config)")
     
     # Test 9: Streaming Response (Optional)
     print_section("Test 9: Streaming Response")
-    message4 = "Tell me about common diabetes medications"
+    message4 = "Tell me about best practices for software architecture design"
     
     print(f"👤 User: {message4}")
     print("⏳ Streaming response...")
@@ -268,7 +268,7 @@ async def test_agentos():
         print("\n🤖 Assistant (streaming): ", end="", flush=True)
         
         async for chunk in client.arun_agent_stream(
-            agent_id="medical-agent",
+            agent_id="orbixa-agent",
             message=message4,
             user_id=user_id,
             session_id=session_id,

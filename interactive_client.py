@@ -1,6 +1,6 @@
 """
 Interactive AgentOS Client
-A simple interactive client to chat with the Medical Bot Agent OS.
+A simple interactive client to chat with the Orbixa AI Agent OS.
 """
 import os
 import json
@@ -14,7 +14,7 @@ load_dotenv()
 
 
 class InteractiveMedicalBot:
-    """Interactive client for the Medical Bot."""
+    """Interactive client for Orbixa AI."""
     
     def __init__(self, base_url: str = "http://localhost:8000"):
         self.base_url = base_url.rstrip('/')
@@ -43,7 +43,7 @@ class InteractiveMedicalBot:
     
     def send_message(self, message: str) -> Optional[dict]:
         """Send message to the agent."""
-        url = f"{self.base_url}/agents/medical-agent/runs"
+        url = f"{self.base_url}/agents/orbixa-agent/runs"
         
         payload = {"message": message}
         if self.session_id:
@@ -71,7 +71,7 @@ class InteractiveMedicalBot:
             print("❌ No active session")
             return None
         
-        url = f"{self.base_url}/agents/medical-agent/sessions/{self.session_id}"
+        url = f"{self.base_url}/agents/orbixa-agent/sessions/{self.session_id}"
         
         try:
             response = requests.get(url, headers=self.get_headers())
@@ -166,7 +166,7 @@ class InteractiveMedicalBot:
     def run(self):
         """Run the interactive client."""
         print("╔" + "═" * 78 + "╗")
-        print("║" + " " * 20 + "Medical Bot Interactive Client" + " " * 28 + "║")
+        print("║" + " " * 20 + "Orbixa AI Interactive Client" + " " * 28 + "║")
         print("╚" + "═" * 78 + "╝")
         
         # Setup
@@ -183,7 +183,7 @@ class InteractiveMedicalBot:
         try:
             response = requests.get(f"{self.base_url}/health")
             if response.status_code == 200:
-                print("✅ Connected to Medical Bot Agent OS")
+                print("✅ Connected to Orbixa AI Agent OS")
             else:
                 print("⚠️  Warning: Server might not be running properly")
         except:

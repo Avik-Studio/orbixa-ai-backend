@@ -1,1 +1,1 @@
-"""Middleware package for Medical Bot Agent OS."""
+"""Middleware package for Orbixa AI Agent OS."""

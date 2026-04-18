@@ -1,5 +1,5 @@
 """
-Filter validator module for Medical Bot Agent OS.
+Filter validator module for Orbixa AI Agent OS.
 Validates knowledge base filters to ensure they conform to the "one book per search" rule.
 """
 from typing import Dict, Any, Optional
@@ -7,7 +7,7 @@ from typing import Dict, Any, Optional
 
 def validate_filters(filters: Optional[Dict[str, Any]]) -> tuple[bool, Optional[str]]:
     """
-    Validate knowledge base filters according to medical bot rules.
+    Validate knowledge base filters for Orbixa AI Agent OS.
     
     Rules:
     - Only ONE book_name per search (no lists of books)

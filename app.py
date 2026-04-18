@@ -1,8 +1,16 @@
 """
-Medical Bot Agent OS - Main Application
+Orbixa AI - Main Application
 Production-ready FastAPI application powered by Agno Agent OS with Gemini.
+Created by Avik Modak.
 """
 import os
+import certifi
+
+# Must be set BEFORE any SSL-using imports (pymongo, httpx, etc.)
+# Fixes TLSV1_ALERT_INTERNAL_ERROR on Python 3.13 with MongoDB Atlas
+os.environ["SSL_CERT_FILE"] = certifi.where()
+os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
+
 import json
 import logging
 from pathlib import Path
@@ -11,12 +19,17 @@ load_dotenv()
 
 from fastapi import UploadFile, File, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from agno.os import AgentOS
 from agno.os.middleware import JWTMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from agents.medical_agent import create_medical_agent
-from knowledge.knowledge_base import ingest_pdf_file, delete_book_by_name, get_all_books
+from agents.medical_agent import create_orbixa_agent
+from knowledge.knowledge_base import ingest_pdf_file, delete_book_by_name, get_all_books, ensure_qdrant_indexes
+
+# Ensure required Qdrant payload indexes exist (content_id, content_hash, name, etc.)
+ensure_qdrant_indexes()
+from auth.routes import router as auth_router
 
 # Configure logging
 logging.basicConfig(
@@ -28,19 +41,32 @@ logger = logging.getLogger(__name__)
 
 # Create AgentOS instance
 agent_os = AgentOS(
-    id="medical-os",
-    description=os.getenv("AGENTOS_DESCRIPTION", "Production runtime for Assessli medical AI assistant"),
-    agents=[create_medical_agent()],
+    id="orbixa-ai",
+    description=os.getenv("AGENTOS_DESCRIPTION", "Production runtime for Orbixa AI - Generative AI Assistant by Avik Modak"),
+    agents=[create_orbixa_agent()],
 )
 
 # Get the FastAPI app
 app = agent_os.get_app()
 
-# Add JWT middleware
+# ── CORS ─────────────────────────────────────────────────────────────────────
+# Add JWT middleware FIRST so it ends up as inner layer.
+# CORS is added SECOND so it becomes the outermost layer and handles preflight
+# OPTIONS requests before JWT ever sees them.
+_allowed_origins = [
+    origin.strip()
+    for origin in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+    if origin.strip()
+]
+
+# Include auth routes
+app.include_router(auth_router)
+
+# Add JWT middleware FIRST (will be inner — runs after CORS)
 jwt_secret = os.getenv("JWT_SECRET")
 app.add_middleware(
     JWTMiddleware,
-    verification_keys=[jwt_secret] if jwt_secret else None,
+    secret_key=jwt_secret,
     algorithm="HS256",
     user_id_claim="userId",
     dependencies_claims=["userId"],
@@ -54,16 +80,31 @@ app.add_middleware(
         "/openapi.json",
         "/redoc",
         "/config",
+        "/auth/register",
+        "/auth/login",
+        "/auth/forgot-password",
+        "/auth/reset-password",
+        "/auth/google",
+        "/auth/me",
     ],
 )
 
+# Add CORS middleware SECOND (will be outermost — runs first, handles OPTIONS)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Custom logging middleware for /agents/medical-agent endpoints
+
+# Custom logging middleware for /agents/orbixa-agent endpoints
 class AgentRunLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # Log for specific endpoints
         should_log = (
-            request.url.path == "/agents/medical-agent/runs" or
+            request.url.path == "/agents/orbixa-agent/runs" or
             request.url.path.startswith("/sessions")
         )
         

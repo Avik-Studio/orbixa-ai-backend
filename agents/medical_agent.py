@@ -1,6 +1,7 @@
 """
-Medical Agent configuration for Medical Bot Agent OS.
-Creates and configures the main Medical AI agent with Gemini model.
+Orbixa AI Agent configuration.
+Creates and configures the main Orbixa AI generative agent with Gemini model.
+Created by Avik Modak.
 """
 import os
 import certifi
@@ -34,8 +35,8 @@ class OutputSchema(BaseModel):
     chat_response: str
     canvas_text: Optional[List[CanvasItem]] = None
 
-def create_medical_agent() -> Agent:
-    """Create and configure the Medical AI Agent with Gemini."""
+def create_orbixa_agent() -> Agent:
+    """Create and configure the Orbixa AI Agent with Gemini."""
     
     # Load system prompt components
     system_prompt = load_system_prompt()
@@ -43,14 +44,14 @@ def create_medical_agent() -> Agent:
     # Create agent with proper configuration
     agent = Agent(
         # Basic configuration
-        id="medical-agent",  # Hardcoded ID for stable API endpoints
-        name="Assessli Medical AI Assistant",
+        id="orbixa-agent",  # Stable ID for API endpoints
+        name="Orbixa AI",
         model=Gemini(
-            id=os.getenv("GEMINI_MODEL_ID", "gemini-3-flash-preview"),
+            id=os.getenv("GEMINI_MODEL_ID", "gemini-2.0-flash"),
             api_key=os.getenv("GOOGLE_API_KEY"),
             temperature=float(os.getenv("GEMINI_TEMPERATURE", "0.3")),
             top_p=float(os.getenv("GEMINI_TOP_P", "0.8")),
-            # thinking_budget=0,
+            thinking_budget=0,
             safety_settings=[
                 {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
                 {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
@@ -61,7 +62,7 @@ def create_medical_agent() -> Agent:
         
         # Instructions and behavior
         instructions=system_prompt,
-        description="Assessli AI Medical assistant made by Assessli company, for medical professionals providing clinical support and guidance, Advanced medical knowledge assistant with multi-book filtering capabilities",
+        description="Orbixa AI - A powerful generative AI assistant created by Avik Modak. Capable of coding, writing, research, analysis, math, science, and creative tasks.",
         expected_output=FEW_SHOT_EXAMPLES,
         
         # Database and session management

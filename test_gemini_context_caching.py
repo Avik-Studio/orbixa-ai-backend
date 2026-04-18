@@ -206,14 +206,14 @@ def test_cache_expiration():
     # First request - should create cache
     print("\n📌 REQUEST 1: Creating cache...")
     cache1 = get_or_create_cache()
-    test_agent_with_cache(cache1, "What is preeclampsia?")
+    test_agent_with_cache(cache1, "What is machine learning?")
     
     # Second request immediately - should hit cache
     print("\n" + "="*80)
     print("📌 REQUEST 2: Immediate request (should hit cache)...")
     print("="*80)
     cache2 = get_or_create_cache()
-    test_agent_with_cache(cache2, "What causes gestational diabetes?")
+    test_agent_with_cache(cache2, "What is the difference between Python and JavaScript?")
     
     # Wait for cache to expire
     print("\n" + "="*80)
@@ -257,7 +257,7 @@ def main():
         print("="*80)
         
         cache = get_or_create_cache()
-        test_agent_with_cache(cache, "What is preeclampsia? Provide a brief 100-word summary.")
+        test_agent_with_cache(cache, "What is machine learning? Provide a brief 100-word summary.")
         
         # Test 2: Cache reuse (immediate second request)
         print("\n" + "="*80)
@@ -265,7 +265,7 @@ def main():
         print("="*80)
         
         cache = get_or_create_cache()
-        test_agent_with_cache(cache, "What are the risk factors for gestational diabetes?")
+        test_agent_with_cache(cache, "What are the best practices for writing clean Python code?")
         
         # Optional: Test cache expiration (uncomment to test, adds 31s delay)
         # test_cache_expiration()

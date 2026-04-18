@@ -1,7 +1,7 @@
 """
-Medical Bot Agent OS - Agno Client Library Test
+Orbixa AI Agent OS - Agno Client Library Test
 
-Uses the official Agno AgentOS client library to test the Medical Bot Agent OS
+Uses the official Agno AgentOS client library to test the Orbixa AI Agent OS
 running on port 8000.
 
 Installation:
@@ -18,19 +18,19 @@ from agno.client.os import AgentOSClient
 
 
 class MedicalBotTester:
-    """Test Medical Bot Agent OS using Agno client library."""
+    """Test Orbixa AI Agent OS using Agno client library."""
     
     def __init__(self, base_url: str = "http://localhost:8000"):
         """Initialize the tester with AgentOS client."""
         self.client = AgentOSClient(base_url=base_url)
-        self.agent_id = "medical-agent"
+        self.agent_id = "orbixa-agent"
         self.session_id: Optional[str] = None
         self.user_id = "test_user_123"
         
     async def run_all_tests(self):
         """Run comprehensive test suite."""
         print("\n" + "=" * 80)
-        print("  Medical Bot Agent OS - Agno Client Test Suite")
+        print("  Orbixa AI Agent OS - Agno Client Test Suite")
         print("=" * 80)
         
         try:
@@ -110,7 +110,7 @@ class MedicalBotTester:
     async def test_get_agent(self):
         """Test: Get specific agent details."""
         print("\n" + "-" * 80)
-        print("TEST 3: Get Specific Agent (medical-agent)")
+        print("TEST 3: Get Specific Agent (orbixa-agent)")
         print("-" * 80)
         
         try:

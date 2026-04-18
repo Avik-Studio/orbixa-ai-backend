@@ -18,6 +18,9 @@ qdrant-client>=1.11.0
 # JWT & Authentication
 pyjwt>=2.8.0
 cryptography>=41.0.0
+bcrypt>=4.0.0
+pydantic[email]>=2.0.0
+httpx>=0.24.0
 
 # Environment & Configuration
 python-dotenv>=1.0.0

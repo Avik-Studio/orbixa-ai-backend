@@ -1,22 +1,64 @@
 """
-Knowledge base configuration for Medical Bot Agent OS.
+Knowledge base configuration for Orbixa AI Agent OS.
 Sets up Qdrant vector database and Knowledge instance with helper functions for PDF operations.
 """
 import os
 import re
+import certifi
+import logging
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Dict, Any
 from qdrant_client import QdrantClient
+from qdrant_client.http import models as qdrant_models
 from agno.knowledge.knowledge import Knowledge
 from agno.knowledge.reader.pdf_reader import PDFReader
 
 from config.database import get_qdrant, get_mongodb
 
+logger = logging.getLogger(__name__)
 
 # Constants for PDF ingestion
 CHUNK_SIZE = 1000
 EMBEDDING_MODEL = "default"
+
+# Payload fields that must be indexed for Agno to filter correctly
+_REQUIRED_INDEXES = [
+    ("content_id", "keyword"),
+    ("content_hash", "keyword"),
+    ("name", "keyword"),
+    ("meta_data.book_name", "keyword"),
+    ("meta_data.part", "keyword"),
+]
+
+
+def ensure_qdrant_indexes() -> None:
+    """Create required Qdrant payload indexes if they don't already exist."""
+    try:
+        client = QdrantClient(
+            url=os.getenv("QDRANT_URL"),
+            api_key=os.getenv("QDRANT_API_KEY"),
+            https=True,
+            verify=certifi.where(),
+        )
+        collection = os.getenv("QDRANT_COLLECTION_NAME", "Orbixa-AI-Collection")
+
+        for field_name, field_type in _REQUIRED_INDEXES:
+            try:
+                client.create_payload_index(
+                    collection_name=collection,
+                    field_name=field_name,
+                    field_schema=field_type,
+                )
+                logger.info(f"Created Qdrant index: {field_name} ({field_type})")
+            except Exception as e:
+                # Index already exists — not an error
+                if "already exists" in str(e).lower():
+                    pass
+                else:
+                    logger.warning(f"Could not create index {field_name}: {e}")
+    except Exception as e:
+        logger.warning(f"Could not connect to Qdrant to create indexes: {e}")
 
 
 def create_knowledge_base() -> Knowledge:

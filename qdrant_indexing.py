@@ -110,8 +110,10 @@ def main():
         ("meta_data.file_name", "keyword"),
         ("meta_data.content_type", "keyword"),
         ("meta_data.processing_timestamp", "datetime"),
-        ("content_hash", "keyword"),  # Required by Agno for deduplication
-        ("content", "text")  # Full-text search on content - this might timeout on large collections
+        ("content_id", "keyword"),      # Required by Agno for filtering/deduplication
+        ("content_hash", "keyword"),    # Required by Agno for deduplication
+        ("name", "keyword"),            # Used by Agno for document name filtering
+        ("content", "text")             # Full-text search on content - this might timeout on large collections
     ]
     
     print(f"\n📊 Creating payload indexes for {len(metadata_fields)} fields...")

@@ -1,5 +1,5 @@
 """
-JWT Middleware configuration for Medical Bot Agent OS.
+JWT Middleware configuration for Orbixa AI Agent OS.
 Configures JWT authentication using Agno's built-in middleware.
 Extracts userId from JWT.
 """
@@ -12,7 +12,7 @@ def create_jwt_middleware() -> JWTMiddleware:
     jwt_secret = os.getenv("JWT_SECRET")
     
     return JWTMiddleware(
-        verification_keys=[jwt_secret] if jwt_secret is not None else None,
+        secret_key=jwt_secret,
         algorithm="HS256",
         user_id_claim="userId",  # Extracts to run_context.user_id
         dependencies_claims=["userId"],  # Extract userId for dependencies

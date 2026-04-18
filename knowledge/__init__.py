@@ -1,1 +1,1 @@
-"""Knowledge package for Medical Bot Agent OS."""
+"""Knowledge package for Orbixa AI Agent OS."""
