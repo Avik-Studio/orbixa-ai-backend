@@ -1,0 +1,64 @@
+# Medical Bot Agent OS - Requirements
+# Python dependencies for production deployment
+
+# Core Agno Framework
+agno>=2.1.0
+fastembed
+# FastAPI & Server
+fastapi>=0.115.0
+uvicorn[standard]>=0.31.0
+python-multipart>=0.0.9
+
+# Database - MongoDB
+pymongo>=4.0.0
+
+# Vector Database - Qdrant
+qdrant-client>=1.11.0
+
+# JWT & Authentication
+pyjwt>=2.8.0
+cryptography>=41.0.0
+
+# Environment & Configuration
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+
+# AI Models - Gemini
+google-genai>=1.0.0
+
+# Additional utilities
+python-multipart>=0.0.9
+# Document Processing (for knowledge base)
+# ============================================================================
+pypdf>=3.0.0
+python-docx>=0.8.11
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+pandas>=2.0.0  # For data processing
+pillow>=10.0.0  # For image processing
+
+# ============================================================================
+# HTTP & Networking
+# ============================================================================
+httpx>=0.24.0
+requests>=2.31.0
+certifi>=2023.0.0
+
+# ============================================================================
+# Utilities
+# ============================================================================
+python-dateutil>=2.8.0
+tqdm>=4.65.0
+regex>=2023.0.0
+
+# ============================================================================
+# Development & Testing
+# ============================================================================
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+
+# ============================================================================
+# Production Server
+# ============================================================================
+gunicorn>=21.0.0

@@ -1,0 +1,41 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Configure Docker authentication for Artifact Registry
+        run: gcloud auth configure-docker gcr.io
+
+      - name: Set IMAGE_TAG
+        run: echo "IMAGE_TAG=v${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE_NAME=gcr.io/data-science-experiment-406904
+
+          docker build -t gcr.io/data-science-experiment-406904/medbot-v3:$IMAGE_TAG .
+          docker push gcr.io/data-science-experiment-406904/medbot-v3:$IMAGE_TAG
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy medbot-v3 \
+            --image=gcr.io/data-science-experiment-406904/medbot-v3:$IMAGE_TAG \
+            --platform=managed \
+            --region=asia-south1 \
+            --allow-unauthenticated \
+            --quiet # Add --quiet to suppress output

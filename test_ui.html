@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assessli Medical AI — Test UI</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --surface3: #30363d;
+      --border: #30363d;
+      --accent: #2ea043;
+      --accent-hover: #3fb950;
+      --accent-soft: #1a3d22;
+      --red: #da3633;
+      --red-soft: #3d1a1a;
+      --blue: #388bfd;
+      --blue-soft: #1a2d3d;
+      --yellow: #d29922;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --text-dim: #484f58;
+      --radius: 8px;
+      --sidebar-w: 260px;
+      --canvas-w: 420px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── TOP BAR ── */
+    #topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    #topbar .logo { font-weight: 700; font-size: 15px; color: var(--accent); white-space: nowrap; }
+    #topbar input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: var(--radius);
+      padding: 5px 10px;
+      font-size: 12px;
+      outline: none;
+    }
+    #topbar input:focus { border-color: var(--accent); }
+    #url-input { width: 200px; }
+    #jwt-input { flex: 1; min-width: 200px; font-family: monospace; }
+    #status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--text-dim); flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    #status-dot.ok { background: var(--accent); }
+    #status-dot.err { background: var(--red); }
+    #status-label { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+    .tb-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: var(--radius);
+      padding: 5px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .tb-btn:hover { background: var(--surface3); }
+
+    /* ── MAIN LAYOUT ── */
+    #layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── LEFT SIDEBAR ── */
+    #sidebar {
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    #sidebar-header {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .new-chat-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.2s;
+    }
+    .new-chat-btn:hover { background: var(--accent-hover); }
+    #sidebar-tabs {
+      display: flex;
+      gap: 4px;
+    }
+    .stab {
+      flex: 1;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: var(--radius);
+      padding: 5px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .stab.active {
+      background: var(--surface2);
+      color: var(--text);
+      border-color: var(--accent);
+    }
+    #sidebar-body { flex: 1; overflow-y: auto; padding: 8px; }
+
+    /* Sessions list */
+    .session-item {
+      padding: 8px 10px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      margin-bottom: 4px;
+      border: 1px solid transparent;
+      position: relative;
+      transition: background 0.15s;
+    }
+    .session-item:hover { background: var(--surface2); }
+    .session-item.active { background: var(--surface2); border-color: var(--accent); }
+    .session-item .s-title { font-size: 12px; font-weight: 500; truncate: ellipsis; white-space: nowrap; overflow: hidden; padding-right: 20px; }
+    .session-item .s-meta { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+    .session-item .s-del {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--red); cursor: pointer;
+      font-size: 14px; opacity: 0; transition: opacity 0.2s; line-height: 1;
+    }
+    .session-item:hover .s-del { opacity: 1; }
+    .empty-state { font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px 10px; }
+
+    /* Books panel */
+    #books-panel { display: flex; flex-direction: column; gap: 8px; }
+    .book-upload-area {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .book-upload-area:hover, .book-upload-area.drag { border-color: var(--accent); color: var(--accent); }
+    #book-file-input { display: none; }
+    .book-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 10px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .book-item .b-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .book-item .b-count { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+    .book-item .b-del {
+      background: none; border: none; color: var(--red);
+      cursor: pointer; font-size: 14px; flex-shrink: 0;
+    }
+    .progress-bar {
+      height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; background: var(--accent); border-radius: 2px;
+      transition: width 0.3s;
+    }
+    .upload-status { font-size: 11px; color: var(--text-muted); text-align: center; }
+
+    /* ── CHAT AREA ── */
+    #chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+    }
+    #chat-header {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    #chat-session-id {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: monospace;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #canvas-toggle {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: var(--radius);
+      padding: 4px 10px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    #canvas-toggle.active { border-color: var(--accent); color: var(--accent); }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .msg { display: flex; flex-direction: column; gap: 6px; max-width: 100%; }
+    .msg.user { align-items: flex-end; }
+    .msg.assistant { align-items: flex-start; }
+
+    .bubble {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+    .msg.user .bubble {
+      background: var(--accent-soft);
+      border: 1px solid var(--accent);
+      color: var(--text);
+      border-bottom-right-radius: 4px;
+    }
+    .msg.assistant .bubble {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+    }
+
+    .metrics-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .metric-tag {
+      font-size: 10px;
+      color: var(--text-muted);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+    }
+
+    /* Loading dots */
+    .typing-dots { display: flex; gap: 4px; align-items: center; padding: 6px 0; }
+    .typing-dots span {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted);
+      animation: bounce 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%,80%,100% { transform: translateY(0); opacity: 0.4; }
+      40% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* Chat input */
+    #input-area {
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    #input-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+    #msg-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      font-size: 14px;
+      resize: none;
+      outline: none;
+      min-height: 44px;
+      max-height: 160px;
+      font-family: inherit;
+      line-height: 1.5;
+    }
+    #msg-input:focus { border-color: var(--accent); }
+    #msg-input::placeholder { color: var(--text-dim); }
+    #send-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.2s;
+      min-height: 44px;
+    }
+    #send-btn:hover { background: var(--accent-hover); }
+    #send-btn:disabled { background: var(--surface3); color: var(--text-muted); cursor: not-allowed; }
+    #stream-toggle {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+    #stream-toggle input { cursor: pointer; accent-color: var(--accent); }
+
+    /* ── CANVAS PANEL ── */
+    #canvas-panel {
+      width: var(--canvas-w);
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: width 0.3s, opacity 0.3s;
+    }
+    #canvas-panel.hidden { width: 0; opacity: 0; overflow: hidden; }
+    #canvas-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    #canvas-tabs { display: flex; gap: 4px; }
+    .ctab {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .ctab.active { background: var(--surface2); color: var(--text); border-color: var(--accent); }
+    #canvas-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .canvas-block {
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .canvas-block:last-child { border-bottom: none; }
+    .canvas-block-md { font-size: 13px; line-height: 1.7; }
+    .canvas-block-md h1 { font-size: 18px; margin-bottom: 8px; color: var(--accent); }
+    .canvas-block-md h2 { font-size: 16px; margin: 12px 0 6px; color: var(--blue); }
+    .canvas-block-md h3 { font-size: 14px; margin: 10px 0 4px; }
+    .canvas-block-md h4 { font-size: 13px; margin: 8px 0 4px; color: var(--text-muted); }
+    .canvas-block-md p { margin-bottom: 8px; }
+    .canvas-block-md strong { color: #f0f6fc; }
+    .canvas-block-md em { color: var(--yellow); font-style: italic; }
+    .canvas-block-md ul, .canvas-block-md ol { padding-left: 18px; margin-bottom: 8px; }
+    .canvas-block-md li { margin-bottom: 3px; }
+    .canvas-block-md code {
+      background: var(--surface3);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+
+    .canvas-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin: 10px 0;
+    }
+    .canvas-table th {
+      background: var(--surface3);
+      color: var(--text);
+      padding: 7px 10px;
+      text-align: left;
+      border: 1px solid var(--border);
+      font-weight: 600;
+    }
+    .canvas-table td {
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    .canvas-table tr:nth-child(even) td { background: #1a1f27; }
+
+    .keypoints-list {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 0;
+    }
+    .keypoints-list li {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      font-size: 12px;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--surface3);
+    }
+    .keypoints-list li:last-child { border-bottom: none; }
+    .keypoints-list li::before {
+      content: '▸';
+      color: var(--accent);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .canvas-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+    #canvas-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* ── TOAST ── */
+    #toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 9999;
+    }
+    .toast {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      font-size: 13px;
+      max-width: 320px;
+      animation: slideIn 0.2s ease;
+    }
+    .toast.success { border-color: var(--accent); }
+    .toast.error { border-color: var(--red); }
+    .toast.info { border-color: var(--blue); }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* ── LOGIN MODAL ── */
+    #login-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 99999;
+      backdrop-filter: blur(4px);
+    }
+    #login-overlay.hidden { display: none; }
+    #login-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 36px 32px;
+      width: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+    }
+    #login-box .login-logo {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.3px;
+    }
+    #login-box .login-sub {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: -10px;
+    }
+    .login-field { display: flex; flex-direction: column; gap: 6px; }
+    .login-field label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+    .login-field input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: var(--radius);
+      padding: 9px 12px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .login-field input:focus { border-color: var(--accent); }
+    #login-error {
+      font-size: 12px;
+      color: var(--red);
+      background: var(--red-soft);
+      border: 1px solid var(--red);
+      border-radius: var(--radius);
+      padding: 8px 10px;
+      display: none;
+    }
+    #login-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 11px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #login-btn:hover { background: var(--accent-hover); }
+    #login-btn:disabled { background: var(--surface3); color: var(--text-muted); cursor: not-allowed; }
+    .demo-credentials {
+      background: var(--surface2);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .demo-credentials .dc-info { line-height: 1.7; }
+    .demo-credentials .dc-fill {
+      background: var(--surface3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 5px;
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .demo-credentials .dc-fill:hover { border-color: var(--accent); color: var(--accent); }
+    #topbar-user {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    #logout-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: var(--radius);
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    #logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+    /* Error bubble */
+    .error-bubble {
+      background: var(--red-soft);
+      border: 1px solid var(--red);
+      color: var(--red);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      #canvas-panel { display: none !important; }
+    }
+    @media (max-width: 600px) {
+      #sidebar { width: 200px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN MODAL -->
+<div id="login-overlay">
+  <div id="login-box">
+    <div class="login-logo">🏥 Assessli Medical AI</div>
+    <div class="login-sub">Test Interface — Sign in to continue</div>
+
+    <div class="demo-credentials">
+      <div class="dc-info">
+        <div>📧 <strong>demo@assessli2.ai</strong></div>
+        <div>🔑 <strong>demo123</strong></div>
+      </div>
+      <button class="dc-fill" id="demo-fill-btn">Use Demo</button>
+    </div>
+
+    <div class="login-field">
+      <label for="login-email">Email</label>
+      <input id="login-email" type="email" placeholder="demo@assessli2.ai" autocomplete="email" />
+    </div>
+    <div class="login-field">
+      <label for="login-pass">Password</label>
+      <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+    <div id="login-error"></div>
+    <button id="login-btn">Sign In</button>
+  </div>
+</div>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <span class="logo">🏥 Assessli Medical AI</span>
+  <input id="url-input" type="text" placeholder="http://localhost:8000" value="http://localhost:8000" />
+  <input id="jwt-input" type="text" placeholder="Paste JWT token here..." />
+  <button class="tb-btn" id="test-conn-btn">Test Connection</button>
+  <span id="status-dot"></span>
+  <span id="status-label">Not connected</span>
+  <div id="topbar-user" style="margin-left:auto">
+    <span id="topbar-email"></span>
+    <button id="logout-btn" style="display:none">Logout</button>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div id="layout">
+
+  <!-- LEFT SIDEBAR -->
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <button class="new-chat-btn" id="new-chat-btn">+ New Chat</button>
+      <div id="sidebar-tabs">
+        <button class="stab active" data-tab="sessions">Sessions</button>
+        <button class="stab" data-tab="books">Books</button>
+      </div>
+    </div>
+    <div id="sidebar-body">
+      <!-- Filled by JS -->
+      <div class="empty-state" id="sessions-empty">No sessions yet.<br/>Start a new chat!</div>
+      <div id="books-panel" style="display:none">
+        <div class="book-upload-area" id="drop-zone">
+          <div>📄 Drop PDF here or click to upload</div>
+          <div style="font-size:10px;margin-top:4px">Supports: bookname.pdf or bookname_Part17.pdf</div>
+        </div>
+        <input type="file" id="book-file-input" accept=".pdf" />
+        <div id="upload-progress" style="display:none">
+          <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+          <div class="upload-status" id="upload-status">Uploading...</div>
+        </div>
+        <div id="books-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT AREA -->
+  <div id="chat-area">
+    <div id="chat-header">
+      <span style="font-size:13px;font-weight:600;">Chat</span>
+      <span id="chat-session-id">No active session</span>
+      <button id="canvas-toggle" class="active">📋 Canvas</button>
+    </div>
+    <div id="messages">
+      <div class="msg assistant">
+        <div class="bubble">
+          👋 Welcome to the Assessli Medical AI Test UI.<br/><br/>
+          <strong>Getting started:</strong><br/>
+          1. Paste your JWT token in the top bar<br/>
+          2. Click <em>Test Connection</em> to verify<br/>
+          3. Type a message and press Enter or click Send
+        </div>
+      </div>
+    </div>
+    <div id="input-area">
+      <div id="input-row">
+        <textarea id="msg-input" rows="1" placeholder="Ask a medical question..."></textarea>
+        <button id="send-btn">Send</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+        <label id="stream-toggle">
+          <input type="checkbox" id="stream-cb" /> Stream response
+        </label>
+        <span id="session-info" style="font-size:10px;color:var(--text-dim)"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CANVAS PANEL -->
+  <div id="canvas-panel">
+    <div id="canvas-header">
+      <span>Canvas</span>
+      <div id="canvas-tabs">
+        <button class="ctab active" data-ctab="content">Content</button>
+        <button class="ctab" data-ctab="keypoints">Key Points</button>
+        <button class="ctab" data-ctab="raw">Raw JSON</button>
+      </div>
+    </div>
+    <div id="canvas-body">
+      <div id="canvas-empty">Send a message to see<br/>structured canvas output here</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<script>
+// ─── CONFIG ────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+let BASE_URL = 'http://localhost:8000';
+let JWT_TOKEN = '';
+let loggedInUser = null;
+let currentSessionId = null;
+let sessions = {};          // id → { id, title, messages[], canvasBlocks[] }
+let lastCanvasData = null;
+let currentCanvasTab = 'content';
+let currentSideTab = 'sessions';
+let isSending = false;
+
+// ─── DEMO CREDENTIALS ───────────────────────────────────────
+const DEMO_USERS = [
+  { email: 'demo@assessli2.ai', password: 'demo123', userId: 'demo@assessli2.ai' }
+];
+const JWT_SECRET = 'edu_app_prod_jwt_secret_k7x9m2p4q8r1s5t0u3v6w9y2z5a8b1c4';
+
+async function generateJWT(userId, secret) {
+  const b64url = obj => btoa(JSON.stringify(obj))
+    .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  const header  = b64url({ alg: 'HS256', typ: 'JWT' });
+  const now     = Math.floor(Date.now() / 1000);
+  const payload = b64url({ userId, iat: now, exp: now + 86400 });
+  const msg     = `${header}.${payload}`;
+  const key     = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(msg));
+  const sigB64 = btoa(String.fromCharCode(...new Uint8Array(sig)))
+    .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  return `${msg}.${sigB64}`;
+}
+
+// ─── LOGIN LOGIC ─────────────────────────────────────────────
+function setupLoginModal() {
+  const overlay = $('login-overlay');
+  const loginBtn = $('login-btn');
+  const demoFill = $('demo-fill-btn');
+  const errEl   = $('login-error');
+
+  demoFill.addEventListener('click', () => {
+    $('login-email').value = 'demo@assessli2.ai';
+    $('login-pass').value  = 'demo123';
+    errEl.style.display = 'none';
+  });
+
+  async function doLogin() {
+    const email = $('login-email').value.trim();
+    const pass  = $('login-pass').value;
+    errEl.style.display = 'none';
+
+    const user = DEMO_USERS.find(u => u.email === email && u.password === pass);
+    if (!user) {
+      errEl.textContent = 'Invalid email or password.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Signing in...';
+    try {
+      const token = await generateJWT(user.userId, JWT_SECRET);
+      JWT_TOKEN = token;
+      loggedInUser = user.email;
+
+      // Fill JWT input & save
+      $('jwt-input').value = token;
+      saveConfig();
+
+      // Update topbar
+      $('topbar-email').textContent = user.email;
+      $('logout-btn').style.display = '';
+
+      // Hide modal
+      overlay.classList.add('hidden');
+      toast(`Welcome, ${user.email}!`, 'success');
+      testConnection();
+      loadSessions();
+    } catch (e) {
+      errEl.textContent = 'Token generation failed: ' + e.message;
+      errEl.style.display = 'block';
+    } finally {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign In';
+    }
+  }
+
+  loginBtn.addEventListener('click', doLogin);
+  $('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  $('login-email').addEventListener('keydown', e => { if (e.key === 'Enter') $('login-pass').focus(); });
+
+  $('logout-btn').addEventListener('click', () => {
+    JWT_TOKEN = '';
+    loggedInUser = null;
+    $('jwt-input').value = '';
+    $('topbar-email').textContent = '';
+    $('logout-btn').style.display = 'none';
+    $('login-email').value = '';
+    $('login-pass').value = '';
+    overlay.classList.remove('hidden');
+    sessions = {};
+    currentSessionId = null;
+    $('messages').innerHTML = '';
+    renderSessionList();
+    saveConfig();
+  });
+
+  // Check if already logged in from saved config
+  if (JWT_TOKEN) {
+    overlay.classList.add('hidden');
+    $('logout-btn').style.display = '';
+    $('topbar-email').textContent = '(saved session)';
+  }
+}
+
+// ─── INIT ───────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  // Restore from localStorage
+  const saved = localStorage.getItem('medui_config');
+  if (saved) {
+    const cfg = JSON.parse(saved);
+    $('url-input').value = cfg.url || 'http://localhost:8000';
+    $('jwt-input').value = cfg.jwt || '';
+  }
+  BASE_URL = $('url-input').value.replace(/\/$/, '');
+  JWT_TOKEN = $('jwt-input').value.trim();
+
+  setupLoginModal();
+  setupEvents();
+  renderSessionList();
+  loadBooks();
+  autoResize($('msg-input'));
+});
+
+function saveConfig() {
+  localStorage.setItem('medui_config', JSON.stringify({
+    url: $('url-input').value,
+    jwt: $('jwt-input').value
+  }));
+}
+
+// ─── EVENTS ─────────────────────────────────────────────────
+function setupEvents() {
+  $('url-input').addEventListener('input', () => {
+    BASE_URL = $('url-input').value.replace(/\/$/, '');
+    saveConfig();
+  });
+  $('jwt-input').addEventListener('input', () => {
+    JWT_TOKEN = $('jwt-input').value.trim();
+    saveConfig();
+  });
+  $('test-conn-btn').addEventListener('click', testConnection);
+  $('new-chat-btn').addEventListener('click', newChat);
+  $('send-btn').addEventListener('click', sendMessage);
+  $('canvas-toggle').addEventListener('click', toggleCanvas);
+
+  $('msg-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+  $('msg-input').addEventListener('input', () => autoResize($('msg-input')));
+
+  // Sidebar tabs
+  document.querySelectorAll('.stab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentSideTab = btn.dataset.tab;
+      renderSidebarContent();
+    });
+  });
+
+  // Canvas tabs
+  document.querySelectorAll('.ctab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ctab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCanvasTab = btn.dataset.ctab;
+      renderCanvas(lastCanvasData);
+    });
+  });
+
+  // Book upload
+  const dropZone = $('drop-zone');
+  const fileInput = $('book-file-input');
+  dropZone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => {
+    if (e.target.files[0]) uploadBook(e.target.files[0]);
+  });
+  dropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropZone.classList.add('drag');
+  });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag');
+    const file = e.dataTransfer.files[0];
+    if (file && file.name.endsWith('.pdf')) uploadBook(file);
+    else toast('Only PDF files are supported', 'error');
+  });
+}
+
+// ─── AUTO RESIZE TEXTAREA ───────────────────────────────────
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+}
+
+// ─── TEST CONNECTION ─────────────────────────────────────────
+async function testConnection() {
+  const dot = $('status-dot');
+  const lbl = $('status-label');
+  dot.className = '';
+  lbl.textContent = 'Checking...';
+  try {
+    const res = await fetch(`${BASE_URL}/health`, { signal: AbortSignal.timeout(5000) });
+    if (res.ok || res.status === 404) {
+      dot.className = 'ok';
+      lbl.textContent = 'Connected';
+      toast('Server reachable', 'success');
+    } else {
+      throw new Error(`HTTP ${res.status}`);
+    }
+  } catch (e) {
+    dot.className = 'err';
+    lbl.textContent = 'Unreachable';
+    toast(`Cannot reach server: ${e.message}`, 'error');
+  }
+}
+
+// ─── HEADERS ────────────────────────────────────────────────
+function authHeaders(json = true) {
+  const h = {};
+  if (JWT_TOKEN) h['Authorization'] = `Bearer ${JWT_TOKEN}`;
+  if (json) h['Content-Type'] = 'application/json';
+  return h;
+}
+
+// ─── SESSION MANAGEMENT ─────────────────────────────────────
+function newChat() {
+  currentSessionId = null;
+  $('messages').innerHTML = '';
+  $('chat-session-id').textContent = 'New session (will be created on first message)';
+  $('session-info').textContent = '';
+  lastCanvasData = null;
+  renderCanvas(null);
+  renderSessionList();
+}
+
+async function loadSessions() {
+  if (!JWT_TOKEN) return;
+  try {
+    const res = await fetch(`${BASE_URL}/agents/medical-agent/sessions`, {
+      headers: authHeaders(false)
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    // Merge into local sessions map
+    (data.sessions || data || []).forEach(s => {
+      if (!sessions[s.session_id || s.id]) {
+        const sid = s.session_id || s.id;
+        sessions[sid] = {
+          id: sid,
+          title: extractSessionTitle(s),
+          messages: [],
+          canvasBlocks: [],
+          updatedAt: s.updated_at || s.created_at
+        };
+      }
+    });
+    renderSessionList();
+  } catch (e) { /* silent */ }
+}
+
+async function deleteSession(sessionId) {
+  try {
+    await fetch(`${BASE_URL}/agents/medical-agent/sessions/${sessionId}`, {
+      method: 'DELETE',
+      headers: authHeaders(false)
+    });
+  } catch (e) { /* silent */ }
+  delete sessions[sessionId];
+  if (currentSessionId === sessionId) newChat();
+  renderSessionList();
+  toast('Session deleted', 'info');
+}
+
+function extractSessionTitle(session) {
+  const runs = session.runs || session.memory?.runs || [];
+  if (runs.length > 0) {
+    const firstMsg = runs[0].message || runs[0].input || 'Session';
+    return firstMsg.length > 40 ? firstMsg.slice(0, 37) + '...' : firstMsg;
+  }
+  return 'New Chat';
+}
+
+function renderSessionList() {
+  const container = $('sidebar-body');
+  if (currentSideTab !== 'sessions') return;
+
+  const ids = Object.keys(sessions);
+  $('sessions-empty').style.display = ids.length === 0 ? 'block' : 'none';
+
+  // Remove old session items
+  container.querySelectorAll('.session-item').forEach(el => el.remove());
+
+  ids.slice().reverse().forEach(id => {
+    const s = sessions[id];
+    const el = document.createElement('div');
+    el.className = 'session-item' + (id === currentSessionId ? ' active' : '');
+    el.innerHTML = `
+      <div class="s-title">${escHtml(s.title)}</div>
+      <div class="s-meta">${s.messages.length} msgs</div>
+      <button class="s-del" title="Delete session">×</button>
+    `;
+    el.addEventListener('click', () => switchSession(id));
+    el.querySelector('.s-del').addEventListener('click', e => {
+      e.stopPropagation();
+      if (confirm('Delete this session?')) deleteSession(id);
+    });
+    container.appendChild(el);
+  });
+}
+
+function switchSession(sessionId) {
+  currentSessionId = sessionId;
+  const s = sessions[sessionId];
+  $('chat-session-id').textContent = sessionId;
+  // Rebuild messages UI
+  $('messages').innerHTML = '';
+  s.messages.forEach(m => appendMessageToUI(m.role, m.content, m.metrics, false));
+  if (s.canvasBlocks && s.canvasBlocks.length > 0) {
+    lastCanvasData = s.canvasBlocks;
+    renderCanvas(lastCanvasData);
+  }
+  renderSessionList();
+  scrollToBottom();
+}
+
+// ─── SEND MESSAGE ────────────────────────────────────────────
+async function sendMessage() {
+  if (isSending) return;
+  const input = $('msg-input');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!JWT_TOKEN) { toast('Please paste a JWT token first', 'error'); return; }
+
+  isSending = true;
+  $('send-btn').disabled = true;
+  input.value = '';
+  autoResize(input);
+
+  // Create session entry if needed
+  if (!currentSessionId) {
+    const tempId = 'pending-' + Date.now();
+    // We'll update after response
+  }
+
+  appendMessageToUI('user', text, null, true);
+
+  // Typing indicator
+  const typingEl = appendTyping();
+
+  const useStream = $('stream-cb').checked;
+  const payload = { message: text, stream: useStream };
+  if (currentSessionId && !currentSessionId.startsWith('pending-')) {
+    payload.session_id = currentSessionId;
+  }
+
+  try {
+    if (useStream) {
+      await handleStreaming(payload, typingEl);
+    } else {
+      await handleNonStreaming(payload, typingEl);
+    }
+  } catch (e) {
+    typingEl.remove();
+    appendErrorToUI(e.message);
+    toast(e.message, 'error');
+  }
+
+  isSending = false;
+  $('send-btn').disabled = false;
+}
+
+async function handleNonStreaming(payload, typingEl) {
+  const res = await fetch(`${BASE_URL}/agents/medical-agent/runs`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || `HTTP ${res.status}`);
+  }
+
+  const data = await res.json();
+  typingEl.remove();
+
+  // Update session
+  const sid = data.session_id;
+  if (sid && sid !== currentSessionId) {
+    currentSessionId = sid;
+    $('chat-session-id').textContent = sid;
+    if (!sessions[sid]) {
+      sessions[sid] = { id: sid, title: payload.message.slice(0, 40), messages: [], canvasBlocks: [], updatedAt: new Date().toISOString() };
+    }
+  }
+
+  // Parse content
+  let contentObj = null;
+  let chatResponse = '';
+  let canvasBlocks = [];
+
+  const rawContent = data.content;
+  if (rawContent) {
+    try {
+      contentObj = typeof rawContent === 'string' ? JSON.parse(rawContent) : rawContent;
+      chatResponse = contentObj.chat_response || contentObj.query_response || '';
+      canvasBlocks = contentObj.canvas_text || [];
+    } catch (e) {
+      chatResponse = rawContent;
+    }
+  }
+
+  const metrics = data.metrics || {};
+  const metricText = buildMetricText(metrics, data);
+
+  appendMessageToUI('assistant', chatResponse || '(No response)', metrics, true);
+  $('session-info').textContent = metricText;
+
+  // Update session data
+  if (currentSessionId && sessions[currentSessionId]) {
+    sessions[currentSessionId].messages.push({ role: 'user', content: payload.message });
+    sessions[currentSessionId].messages.push({ role: 'assistant', content: chatResponse, metrics });
+    sessions[currentSessionId].canvasBlocks = canvasBlocks;
+    sessions[currentSessionId].updatedAt = new Date().toISOString();
+  }
+
+  // Render canvas
+  if (canvasBlocks.length > 0) {
+    lastCanvasData = canvasBlocks;
+    renderCanvas(canvasBlocks);
+  }
+
+  renderSessionList();
+  scrollToBottom();
+}
+
+async function handleStreaming(payload, typingEl) {
+  const res = await fetch(`${BASE_URL}/agents/medical-agent/runs`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || `HTTP ${res.status}`);
+  }
+
+  typingEl.remove();
+
+  // Create streaming bubble
+  const msgEl = document.createElement('div');
+  msgEl.className = 'msg assistant';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = '';
+  msgEl.appendChild(bubble);
+  $('messages').appendChild(msgEl);
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let fullContent = '';
+  let sessionId = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value, { stream: true });
+    // Parse SSE
+    chunk.split('\n').forEach(line => {
+      if (line.startsWith('data: ')) {
+        try {
+          const d = JSON.parse(line.slice(6));
+          if (d.session_id && !sessionId) {
+            sessionId = d.session_id;
+            currentSessionId = sessionId;
+            $('chat-session-id').textContent = sessionId;
+            if (!sessions[sessionId]) {
+              sessions[sessionId] = { id: sessionId, title: payload.message.slice(0, 40), messages: [], canvasBlocks: [], updatedAt: new Date().toISOString() };
+            }
+          }
+          if (d.content) { fullContent += d.content; bubble.textContent = fullContent; scrollToBottom(); }
+        } catch {}
+      }
+    });
+    scrollToBottom();
+  }
+
+  // Try to parse final content as JSON
+  let chatResponse = fullContent;
+  let canvasBlocks = [];
+  try {
+    const parsed = JSON.parse(fullContent);
+    chatResponse = parsed.chat_response || parsed.query_response || fullContent;
+    canvasBlocks = parsed.canvas_text || [];
+  } catch {}
+
+  bubble.innerHTML = DOMPurify.sanitize(chatResponse);
+  if (canvasBlocks.length > 0) {
+    lastCanvasData = canvasBlocks;
+    renderCanvas(canvasBlocks);
+  }
+
+  if (currentSessionId && sessions[currentSessionId]) {
+    sessions[currentSessionId].messages.push({ role: 'user', content: payload.message });
+    sessions[currentSessionId].messages.push({ role: 'assistant', content: chatResponse });
+    sessions[currentSessionId].canvasBlocks = canvasBlocks;
+  }
+
+  renderSessionList();
+  scrollToBottom();
+}
+
+// ─── UI HELPERS ──────────────────────────────────────────────
+function appendMessageToUI(role, content, metrics, scroll) {
+  const msgEl = document.createElement('div');
+  msgEl.className = `msg ${role}`;
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = content;
+  msgEl.appendChild(bubble);
+
+  if (metrics && role === 'assistant') {
+    const mrow = document.createElement('div');
+    mrow.className = 'metrics-row';
+    mrow.innerHTML = buildMetricTags(metrics);
+    msgEl.appendChild(mrow);
+  }
+
+  $('messages').appendChild(msgEl);
+  if (scroll) scrollToBottom();
+}
+
+function appendErrorToUI(msg) {
+  const el = document.createElement('div');
+  el.className = 'msg assistant';
+  el.innerHTML = `<div class="error-bubble">⚠️ Error: ${escHtml(msg)}</div>`;
+  $('messages').appendChild(el);
+  scrollToBottom();
+}
+
+function appendTyping() {
+  const el = document.createElement('div');
+  el.className = 'msg assistant';
+  el.innerHTML = `<div class="bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+  $('messages').appendChild(el);
+  scrollToBottom();
+  return el;
+}
+
+function buildMetricText(metrics, data) {
+  const parts = [];
+  if (metrics.time) parts.push(`${metrics.time.toFixed(2)}s`);
+  if (metrics.input_tokens) parts.push(`↑${metrics.input_tokens} tokens`);
+  if (metrics.output_tokens) parts.push(`↓${metrics.output_tokens} tokens`);
+  if (data.run_id) parts.push(`run: ${data.run_id.slice(0, 8)}…`);
+  return parts.join('  ·  ');
+}
+
+function buildMetricTags(metrics) {
+  let html = '';
+  if (metrics.time) html += `<span class="metric-tag">⏱ ${metrics.time.toFixed(2)}s</span>`;
+  if (metrics.input_tokens) html += `<span class="metric-tag">↑ ${metrics.input_tokens} in</span>`;
+  if (metrics.output_tokens) html += `<span class="metric-tag">↓ ${metrics.output_tokens} out</span>`;
+  return html;
+}
+
+function scrollToBottom() {
+  const m = $('messages');
+  m.scrollTop = m.scrollHeight;
+}
+
+// ─── CANVAS RENDERING ────────────────────────────────────────
+function renderCanvas(blocks) {
+  const body = $('canvas-body');
+
+  if (!blocks || blocks.length === 0) {
+    body.innerHTML = '<div id="canvas-empty">Send a message to see<br/>structured canvas output here</div>';
+    return;
+  }
+
+  if (currentCanvasTab === 'raw') {
+    body.innerHTML = `<pre style="font-size:11px;color:var(--text-muted);white-space:pre-wrap;word-break:break-all">${escHtml(JSON.stringify(blocks, null, 2))}</pre>`;
+    return;
+  }
+
+  if (currentCanvasTab === 'keypoints') {
+    const allKeypoints = blocks.flatMap(b => b.keypoints || []);
+    if (allKeypoints.length === 0) {
+      body.innerHTML = '<div id="canvas-empty">No key points in this response</div>';
+      return;
+    }
+    body.innerHTML = `<ul class="keypoints-list">${allKeypoints.map(kp => `<li>${escHtml(kp)}</li>`).join('')}</ul>`;
+    return;
+  }
+
+  // Content tab
+  body.innerHTML = '';
+  blocks.forEach((block, i) => {
+    const div = document.createElement('div');
+    div.className = 'canvas-block';
+
+    // Text (markdown)
+    if (block.text) {
+      const mdDiv = document.createElement('div');
+      mdDiv.className = 'canvas-block-md';
+      mdDiv.innerHTML = DOMPurify.sanitize(marked.parse(block.text));
+      div.appendChild(mdDiv);
+    }
+
+    // Table
+    if (block.table) {
+      const t = block.table;
+      let tableHtml = `<div class="canvas-section-label" style="margin-top:10px">Table</div><table class="canvas-table"><thead><tr>`;
+      (t.column_headers || []).forEach(h => { tableHtml += `<th>${escHtml(h)}</th>`; });
+      tableHtml += '</tr></thead><tbody>';
+      (t.rows || []).forEach(row => {
+        tableHtml += '<tr>';
+        row.forEach(cell => { tableHtml += `<td>${escHtml(String(cell))}</td>`; });
+        tableHtml += '</tr>';
+      });
+      tableHtml += '</tbody></table>';
+      div.innerHTML += tableHtml;
+    }
+
+    // Keypoints
+    if (block.keypoints && block.keypoints.length > 0) {
+      let kpHtml = '<div class="canvas-section-label" style="margin-top:10px">Key Points</div><ul class="keypoints-list">';
+      block.keypoints.forEach(kp => { kpHtml += `<li>${escHtml(kp)}</li>`; });
+      kpHtml += '</ul>';
+      div.innerHTML += kpHtml;
+    }
+
+    body.appendChild(div);
+  });
+}
+
+// ─── CANVAS TOGGLE ───────────────────────────────────────────
+let canvasVisible = true;
+function toggleCanvas() {
+  const panel = $('canvas-panel');
+  const btn = $('canvas-toggle');
+  canvasVisible = !canvasVisible;
+  panel.classList.toggle('hidden', !canvasVisible);
+  btn.classList.toggle('active', canvasVisible);
+}
+
+// ─── SIDEBAR CONTENT ─────────────────────────────────────────
+function renderSidebarContent() {
+  const booksPanel = $('books-panel');
+  const emptyEl = $('sessions-empty');
+
+  if (currentSideTab === 'books') {
+    booksPanel.style.display = 'flex';
+    emptyEl.style.display = 'none';
+    document.querySelectorAll('.session-item').forEach(el => el.style.display = 'none');
+    loadBooks();
+  } else {
+    booksPanel.style.display = 'none';
+    document.querySelectorAll('.session-item').forEach(el => el.style.display = '');
+    renderSessionList();
+  }
+}
+
+// ─── BOOK MANAGEMENT ─────────────────────────────────────────
+async function loadBooks() {
+  if (!JWT_TOKEN) return;
+  const list = $('books-list');
+  list.innerHTML = '<div class="empty-state">Loading books...</div>';
+  try {
+    const res = await fetch(`${BASE_URL}/knowledge/books`, {
+      headers: authHeaders(false)
+    });
+    if (!res.ok) { list.innerHTML = '<div class="empty-state">Could not load books</div>'; return; }
+    const data = await res.json();
+    const books = data.books || [];
+    if (books.length === 0) {
+      list.innerHTML = '<div class="empty-state">No books uploaded yet</div>';
+      return;
+    }
+    list.innerHTML = '';
+    books.forEach(book => {
+      const el = document.createElement('div');
+      el.className = 'book-item';
+      el.innerHTML = `
+        <span class="b-name" title="${escHtml(book.book_name || book.name)}">${escHtml(book.book_name || book.name)}</span>
+        <span class="b-count">${book.chunk_count || book.chunks || '?'} chunks</span>
+        <button class="b-del" title="Delete book">🗑</button>
+      `;
+      el.querySelector('.b-del').addEventListener('click', () => {
+        if (confirm(`Delete "${book.book_name || book.name}"?`)) deleteBook(book.book_name || book.name);
+      });
+      list.appendChild(el);
+    });
+  } catch (e) {
+    list.innerHTML = '<div class="empty-state">Error loading books</div>';
+  }
+}
+
+async function uploadBook(file) {
+  if (!JWT_TOKEN) { toast('JWT token required to upload books', 'error'); return; }
+
+  const prog = $('upload-progress');
+  const fill = $('progress-fill');
+  const status = $('upload-status');
+  prog.style.display = 'block';
+  fill.style.width = '10%';
+  status.textContent = `Uploading ${file.name}...`;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    fill.style.width = '40%';
+    const res = await fetch(`${BASE_URL}/knowledge/ingest-pdf`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${JWT_TOKEN}` },
+      body: formData
+    });
+    fill.style.width = '80%';
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || data.message || `HTTP ${res.status}`);
+    fill.style.width = '100%';
+    status.textContent = `✅ Uploaded: ${data.book_name}`;
+    toast(`Book uploaded: ${data.book_name}`, 'success');
+    setTimeout(() => { prog.style.display = 'none'; fill.style.width = '0%'; }, 2000);
+    loadBooks();
+    $('book-file-input').value = '';
+  } catch (e) {
+    fill.style.width = '100%';
+    fill.style.background = 'var(--red)';
+    status.textContent = `❌ ${e.message}`;
+    toast(`Upload failed: ${e.message}`, 'error');
+    setTimeout(() => { prog.style.display = 'none'; fill.style.width = '0%'; fill.style.background = ''; }, 3000);
+  }
+}
+
+async function deleteBook(bookName) {
+  try {
+    const res = await fetch(`${BASE_URL}/knowledge/delete-book/${encodeURIComponent(bookName)}`, {
+      method: 'DELETE',
+      headers: authHeaders(false)
+    });
+    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.message || `HTTP ${res.status}`); }
+    toast(`Deleted: ${bookName}`, 'info');
+    loadBooks();
+  } catch (e) {
+    toast(`Delete failed: ${e.message}`, 'error');
+  }
+}
+
+// ─── UTILITIES ───────────────────────────────────────────────
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  $('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// Load sessions on JWT change
+$('jwt-input').addEventListener('change', () => {
+  JWT_TOKEN = $('jwt-input').value.trim();
+  saveConfig();
+  loadSessions();
+});
+
+// Auto load sessions if token already present
+if (JWT_TOKEN) setTimeout(loadSessions, 500);
+</script>
+</body>
+</html>

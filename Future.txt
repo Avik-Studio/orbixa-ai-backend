@@ -1,0 +1,45 @@
+agent = Agent(
+    model=Gemini(
+        id="gemini-3-flash-preview",
+        cached_content=cache.name,  # Cache has system_instruction
+        api_key=os.getenv("GOOGLE_API_KEY"),
+        temperature=0.3,
+        safety_settings=[...],
+    ),
+    
+    # DISABLE system message generation:
+    build_context=False,  # Prevents Agno from building system message
+    system_message=None,  # Explicitly no system message
+    markdown=False,       # markdown=True adds a system message
+    
+    # These are SAFE to keep (add to user context, not system):
+    db=get_mongodb(),
+    add_history_to_context=True,
+    num_history_runs=5,
+    knowledge=create_knowledge_base(),
+    search_knowledge=True,
+    output_schema=OutputSchema,
+    retries=3,
+    debug_mode=True,
+)
+agent = Agent(
+    model=Gemini(
+        id="gemini-3-flash-preview",
+        cached_content=cache.name,  # Cache already has system_instruction
+    ),
+    # Remove or minimize these to avoid system message conflicts:
+    instructions=None,  # Don't add instructions
+    description=None,   # Don't add description
+    system_message="",  # Or explicitly set empty system message
+    
+    # These can stay - they add to user context, not system:
+    add_history_to_context=True,
+    add_memories_to_context=True,
+    # ... other non-system-message params
+)
+description → Put in cache's system_instruction
+expected_output → Put in cache's system_instruction
+markdown=True → Set to False (adds system message)
+Set build_context=False and system_message=None
+
+now add context caching to our 

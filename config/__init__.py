@@ -1,0 +1,1 @@
+"""Configuration module for chatbot settings and examples"""
