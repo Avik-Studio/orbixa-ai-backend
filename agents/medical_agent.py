@@ -47,7 +47,7 @@ def create_orbixa_agent() -> Agent:
         id="orbixa-agent",  # Stable ID for API endpoints
         name="Orbixa AI",
         model=Gemini(
-            id=os.getenv("GEMINI_MODEL_ID", "gemini-2.0-flash"),
+            id=os.getenv("GEMINI_MODEL_ID", "gemini-3-flash-preview"),
             api_key=os.getenv("GOOGLE_API_KEY"),
             temperature=float(os.getenv("GEMINI_TEMPERATURE", "0.3")),
             top_p=float(os.getenv("GEMINI_TOP_P", "0.8")),
