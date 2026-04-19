@@ -1,9 +1,25 @@
-name: Deploy to Cloud Run
+name: Deploy to AWS ECS
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-aws-main
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+  ECS_SERVICE: ${{ vars.ECS_SERVICE }}
+  ECS_CONTAINER_NAME: ${{ vars.ECS_CONTAINER_NAME }}
 
 jobs:
   build-and-deploy:
@@ -11,31 +27,82 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Configure Docker authentication for Artifact Registry
-        run: gcloud auth configure-docker gcr.io
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Set IMAGE_TAG
-        run: echo "IMAGE_TAG=v${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
+      - name: Set image metadata
+        run: |
+          echo "IMAGE_TAG=sha-${GITHUB_SHA::7}-${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+          echo "IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/${ECR_REPOSITORY}:sha-${GITHUB_SHA::7}-${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
 
       - name: Build and push Docker image
         run: |
-          IMAGE_NAME=gcr.io/data-science-experiment-406904
+          docker build -t "$IMAGE_URI" .
+          docker push "$IMAGE_URI"
 
-          docker build -t gcr.io/data-science-experiment-406904/medbot-v3:$IMAGE_TAG .
-          docker push gcr.io/data-science-experiment-406904/medbot-v3:$IMAGE_TAG
-
-      - name: Deploy to Cloud Run
+      - name: Download current ECS task definition
         run: |
-          gcloud run deploy medbot-v3 \
-            --image=gcr.io/data-science-experiment-406904/medbot-v3:$IMAGE_TAG \
-            --platform=managed \
-            --region=asia-south1 \
-            --allow-unauthenticated \
-            --quiet # Add --quiet to suppress output
+          TASK_DEFINITION_ARN=$(aws ecs describe-services \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE" \
+            --query 'services[0].taskDefinition' \
+            --output text)
+
+          aws ecs describe-task-definition \
+            --task-definition "$TASK_DEFINITION_ARN" \
+            --query 'taskDefinition' \
+            > task-definition.json
+
+      - name: Render updated task definition
+        run: |
+          jq --arg container "$ECS_CONTAINER_NAME" --arg image "$IMAGE_URI" '
+            del(
+              .taskDefinitionArn,
+              .revision,
+              .status,
+              .requiresAttributes,
+              .compatibilities,
+              .registeredAt,
+              .registeredBy
+            )
+            | .containerDefinitions |= map(
+              if .name == $container then
+                .image = $image
+              else
+                .
+              end
+            )
+          ' task-definition.json > task-definition-rendered.json
+
+          jq -e --arg container "$ECS_CONTAINER_NAME" '
+            any(.containerDefinitions[]; .name == $container)
+          ' task-definition-rendered.json > /dev/null
+
+      - name: Register new ECS task definition
+        run: |
+          NEW_TASK_DEFINITION_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://task-definition-rendered.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          echo "NEW_TASK_DEFINITION_ARN=$NEW_TASK_DEFINITION_ARN" >> "$GITHUB_ENV"
+
+      - name: Deploy to Amazon ECS
+        run: |
+          aws ecs update-service \
+            --cluster "$ECS_CLUSTER" \
+            --service "$ECS_SERVICE" \
+            --task-definition "$NEW_TASK_DEFINITION_ARN"
+
+          aws ecs wait services-stable \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE"
